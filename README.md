@@ -31,20 +31,7 @@ android-control/
 - Android phone with Termux + proot Ubuntu
 - Either **Wireless ADB** enabled or **root (su)** access
 
-### Option 1: Shared Installation (all agents)
-
-```bash
-# Clone the repo
-git clone https://github.com/mdluex/Openclaw-Android.git
-
-# Create the shared skills directory if it doesn't exist
-mkdir -p ~/.openclaw/skills
-
-# Copy the skill
-cp -r Openclaw-Android/android-control ~/.openclaw/skills/android-control
-```
-
-### Option 2: Agent-Specific Installation (single workspace)
+### Manual Installation
 
 ```bash
 # Clone the repo
@@ -60,10 +47,10 @@ mkdir -p skills
 cp -r ~/Openclaw-Android/android-control skills/android-control
 ```
 
-### Quick One-Liner (shared)
+### Quick One-Liner
 
 ```bash
-git clone https://github.com/mdluex/Openclaw-Android.git && mkdir -p ~/.openclaw/skills && cp -r Openclaw-Android/android-control ~/.openclaw/skills/android-control
+git clone https://github.com/mdluex/Openclaw-Android.git && cd ~/.openclaw/workspace && mkdir -p skills && cp -r ~/Openclaw-Android/android-control skills/android-control
 ```
 
 ### Verify Installation
@@ -78,7 +65,7 @@ ls ~/.openclaw/skills/android-control/SKILL.md
 ls <workspace>/skills/android-control/SKILL.md
 ```
 
-OpenClaw will automatically detect the skill and trigger it when you ask anything related to phone control, app launching, or system automation.
+OpenClaw will automatically detect the skill and trigger it when you ask anything related to android control, app launching, or system automation.
 
 ## Usage Examples
 

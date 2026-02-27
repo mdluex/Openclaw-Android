@@ -1,9 +1,9 @@
 ---
-name: phone-control
+name: android-control
 description: Control an Android phone via a proot Ubuntu environment inside Termux using shell scripts. Use when the user wants to interact with the phone, including opening apps, searching YouTube, sending WhatsApp messages, controlling WiFi/Bluetooth/brightness, making calls, sending SMS, taking screenshots, installing apps, or performing complex UI tasks via a visual agent. Triggers on any request involving phone automation, app launching, deep linking, system controls, or screen interaction.
 ---
 
-# Phone Control
+# Android Control
 
 Autonomous control of an Android phone via a proot Ubuntu environment inside Termux using bash scripts. No Python needed.
 
