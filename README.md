@@ -59,11 +59,7 @@ rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Androi
 Check that the skill is in place:
 
 ```bash
-# Shared
-ls ~/.openclaw/skills/android-control/SKILL.md
-
-# OR Agent-specific
-ls <workspace>/skills/android-control/SKILL.md
+ls ~/.openclaw/workspace/skills/android-control/SKILL.md
 ```
 
 OpenClaw will automatically detect the skill and trigger it when you ask anything related to android control, app launching, or system automation.
