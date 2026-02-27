@@ -10,20 +10,33 @@
 TERMUX_PREFIX="/data/data/com.termux/files/usr"
 TERMUX_BIN="$TERMUX_PREFIX/bin"
 
-# Helper: Run command on Android from inside proot Ubuntu
-run_cmd() {
+# Auto-detect the best method to run Android commands from proot
+detect_method() {
+  if [ -n "$RUN_METHOD" ]; then return; fi
   if [ -x "$TERMUX_BIN/adb" ] && "$TERMUX_BIN/adb" get-state 1>/dev/null 2>&1; then
-    "$TERMUX_BIN/adb" shell "$@"
+    RUN_METHOD="adb"
+  elif [ -x /host-rootfs/sbin/su ]; then
+    RUN_METHOD="magisk"
   elif [ -x /host-rootfs/system/xbin/su ]; then
-    /host-rootfs/system/xbin/su -c "$@"
+    RUN_METHOD="system_xbin"
   elif [ -x /host-rootfs/system/bin/su ]; then
-    /host-rootfs/system/bin/su -c "$@"
-  elif [ -x "$TERMUX_BIN/su" ]; then
-    "$TERMUX_BIN/su" -c "$@"
+    RUN_METHOD="system_bin"
   else
     echo "❌ Error: Cannot reach Android from proot."
+    echo "   Enable Wireless ADB or ensure root su is available."
     exit 1
   fi
+}
+
+# Run a command on Android from inside proot Ubuntu
+run_cmd() {
+  detect_method
+  case "$RUN_METHOD" in
+    adb)         "$TERMUX_BIN/adb" shell "$@" ;;
+    magisk)      /host-rootfs/sbin/su -c "$@" ;;
+    system_xbin) /host-rootfs/system/xbin/su -c "$@" ;;
+    system_bin)  /host-rootfs/system/bin/su -c "$@" ;;
+  esac
 }
 
 MODEL="gemini-2.5-flash-lite"

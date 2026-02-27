@@ -12,22 +12,45 @@ shift
 TERMUX_PREFIX="/data/data/com.termux/files/usr"
 TERMUX_BIN="$TERMUX_PREFIX/bin"
 
-# Helper: Run command on Android from inside proot Ubuntu
-# Priority: adb shell → su (via host-rootfs) → direct termux binary
-run_cmd() {
+# Auto-detect the best method to run Android commands from proot
+# Cached in RUN_METHOD to avoid re-detecting on every call
+detect_method() {
+  if [ -n "$RUN_METHOD" ]; then return; fi
+
+  # 1. ADB wireless debugging (most reliable from proot)
   if [ -x "$TERMUX_BIN/adb" ] && "$TERMUX_BIN/adb" get-state 1>/dev/null 2>&1; then
-    "$TERMUX_BIN/adb" shell "$@"
+    RUN_METHOD="adb"
+  # 2. Magisk su (usually at /sbin/su)
+  elif [ -x /host-rootfs/sbin/su ]; then
+    RUN_METHOD="magisk"
+  # 3. Legacy su paths (SuperSU / older roots)
   elif [ -x /host-rootfs/system/xbin/su ]; then
-    /host-rootfs/system/xbin/su -c "$@"
+    RUN_METHOD="system_xbin"
   elif [ -x /host-rootfs/system/bin/su ]; then
-    /host-rootfs/system/bin/su -c "$@"
-  elif [ -x "$TERMUX_BIN/su" ]; then
-    "$TERMUX_BIN/su" -c "$@"
+    RUN_METHOD="system_bin"
   else
     echo "❌ Error: Cannot reach Android from proot."
-    echo "   Ensure ADB wireless debugging is on, or root (su) is available."
+    echo ""
+    echo "   Fix: Enable Wireless ADB (recommended):"
+    echo "   1. Settings → Developer Options → Wireless Debugging → ON"
+    echo "   2. Tap 'Pair device with pairing code' and note the IP:PORT + code"
+    echo "   3. In Termux (not proot), run:"
+    echo "      adb pair <IP:PORT> <CODE>"
+    echo "      adb connect <IP:PORT>"
+    echo "   4. Then re-enter proot and try again."
     exit 1
   fi
+}
+
+# Run a command on Android from inside proot Ubuntu
+run_cmd() {
+  detect_method
+  case "$RUN_METHOD" in
+    adb)         "$TERMUX_BIN/adb" shell "$@" ;;
+    magisk)      /host-rootfs/sbin/su -c "$@" ;;
+    system_xbin) /host-rootfs/system/xbin/su -c "$@" ;;
+    system_bin)  /host-rootfs/system/bin/su -c "$@" ;;
+  esac
 }
 
 case "$CMD" in
