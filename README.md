@@ -64,7 +64,67 @@ ls ~/.openclaw/workspace/skills/android-control/SKILL.md
 
 OpenClaw will automatically detect the skill and trigger it when you ask anything related to android control, app launching, or system automation.
 
-## Usage Examples
+## Manual Testing
+
+Run these commands from inside proot Ubuntu to test the scripts directly:
+
+```bash
+# Navigate to the skill folder
+cd ~/.openclaw/workspace/skills/android-control
+
+# --- Basic Tests ---
+
+# Check battery level
+bash scripts/phone_control.sh battery
+
+# Take a screenshot
+bash scripts/phone_control.sh screenshot
+
+# Get device info
+bash scripts/phone_control.sh info
+
+# --- App Control ---
+
+# Open YouTube
+bash scripts/phone_control.sh open-app com.google.android.youtube
+
+# Search YouTube for "lofi music"
+bash scripts/phone_control.sh youtube-search "lofi music"
+
+# Open a URL in Chrome
+bash scripts/phone_control.sh open-url "https://google.com"
+
+# Open WhatsApp
+bash scripts/phone_control.sh open-app com.whatsapp
+
+# Open Settings
+bash scripts/phone_control.sh open-app com.android.settings
+
+# --- System Controls ---
+
+# Turn WiFi off then on
+bash scripts/phone_control.sh wifi off
+bash scripts/phone_control.sh wifi on
+
+# Turn Bluetooth on
+bash scripts/phone_control.sh bluetooth on
+
+# Set brightness to max
+bash scripts/phone_control.sh brightness 255
+
+# Set brightness to low
+bash scripts/phone_control.sh brightness 50
+
+# --- Visual Agent (requires Gemini API key) ---
+
+# Open Settings and enable Dark Mode
+bash scripts/phone_agent.sh "Open Settings and enable Dark Mode"
+
+# Read what's on screen
+bash scripts/phone_agent.sh "Tell me what is currently on the screen"
+```
+
+## Usage with OpenClaw
 
 Once installed, just talk to your OpenClaw agent:
 
