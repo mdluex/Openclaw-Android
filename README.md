@@ -35,35 +35,35 @@ android-control/
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/Openclaw-Phone.git
+git clone https://github.com/mdluex/Openclaw-Android.git
 
 # Create the shared skills directory if it doesn't exist
 mkdir -p ~/.openclaw/skills
 
 # Copy the skill
-cp -r Openclaw-Phone/android-control ~/.openclaw/skills/android-control
+cp -r Openclaw-Android/android-control ~/.openclaw/skills/android-control
 ```
 
 ### Option 2: Agent-Specific Installation (single workspace)
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/Openclaw-Phone.git
+git clone https://github.com/mdluex/Openclaw-Android.git
 
 # Navigate to your workspace
-cd /path/to/your/workspace
+cd ~/.openclaw/workspace
 
 # Create the skills directory if it doesn't exist
 mkdir -p skills
 
 # Copy the skill
-cp -r /path/to/Openclaw-Phone/android-control skills/android-control
+cp -r ~/Openclaw-Android/android-control skills/android-control
 ```
 
 ### Quick One-Liner (shared)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Openclaw-Phone.git && mkdir -p ~/.openclaw/skills && cp -r Openclaw-Phone/android-control ~/.openclaw/skills/android-control
+git clone https://github.com/mdluex/Openclaw-Android.git && mkdir -p ~/.openclaw/skills && cp -r Openclaw-Android/android-control ~/.openclaw/skills/android-control
 ```
 
 ### Verify Installation
