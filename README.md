@@ -43,14 +43,14 @@ cd ~/.openclaw/workspace
 # Create the skills directory if it doesn't exist
 mkdir -p skills
 
-# Copy the skill
-cp -r ~/Openclaw-Android/android-control skills/android-control
+# Copy the skill (overwrites if already exists)
+cp -rf ~/Openclaw-Android/android-control skills/android-control
 ```
 
 ### Quick One-Liner
 
 ```bash
-git clone https://github.com/mdluex/Openclaw-Android.git && cd ~/.openclaw/workspace && mkdir -p skills && cp -r ~/Openclaw-Android/android-control skills/android-control
+git clone https://github.com/mdluex/Openclaw-Android.git && cd ~/.openclaw/workspace && mkdir -p skills && cp -rf ~/Openclaw-Android/android-control skills/android-control
 ```
 
 ### Verify Installation
