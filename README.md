@@ -34,13 +34,14 @@ android-control/
 ### Manual Installation
 
 ```bash
-# Clone the repo
-git clone https://github.com/mdluex/Openclaw-Android.git
+# Clone the repo (remove old clone if exists)
+rm -rf ~/Openclaw-Android
+git clone https://github.com/mdluex/Openclaw-Android.git ~/Openclaw-Android
 
 # Navigate to your workspace
 cd ~/.openclaw/workspace
 
-# Create the skills directory if it doesn't exist
+# Create the skills directory (ignored if already exists)
 mkdir -p skills
 
 # Copy the skill (overwrites if already exists)
@@ -50,7 +51,7 @@ cp -rf ~/Openclaw-Android/android-control skills/android-control
 ### Quick One-Liner
 
 ```bash
-git clone https://github.com/mdluex/Openclaw-Android.git && cd ~/.openclaw/workspace && mkdir -p skills && cp -rf ~/Openclaw-Android/android-control skills/android-control
+rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Android.git ~/Openclaw-Android && cd ~/.openclaw/workspace && mkdir -p skills && cp -rf ~/Openclaw-Android/android-control skills/android-control
 ```
 
 ### Verify Installation
