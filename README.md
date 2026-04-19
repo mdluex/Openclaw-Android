@@ -44,6 +44,8 @@ android-control/
 
 ### Manual Installation
 
+> **⚠️ Note:** Installing this skill will overwrite your existing `SOUL.md` file. The commands below automatically create a backup (`SOUL.md.backup`).
+
 ```bash
 # Clone the repo (remove old clone if exists)
 rm -rf ~/Openclaw-Android
@@ -58,14 +60,26 @@ mkdir -p skills
 # Copy the skill (overwrites if already exists)
 cp -rf ~/Openclaw-Android/android-control skills/android-control
 
-# Copy SOUL.md to the workspace root
+# Backup existing SOUL.md before overwriting
+cp ~/.openclaw/workspace/SOUL.md ~/.openclaw/workspace/SOUL.md.backup 2>/dev/null || true
+
+# Copy new SOUL.md to the workspace root
 cp -f ~/Openclaw-Android/android-control/SOUL.md ~/.openclaw/workspace/SOUL.md
 ```
 
 ### Quick One-Liner
 
 ```bash
-rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Android.git ~/Openclaw-Android && cd ~/.openclaw/workspace && mkdir -p skills && cp -rf ~/Openclaw-Android/android-control skills/android-control && cp -f ~/Openclaw-Android/android-control/SOUL.md ~/.openclaw/workspace/SOUL.md
+rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Android.git ~/Openclaw-Android && cd ~/.openclaw/workspace && mkdir -p skills && cp -rf ~/Openclaw-Android/android-control skills/android-control && cp SOUL.md SOUL.md.backup 2>/dev/null || true && cp -f ~/Openclaw-Android/android-control/SOUL.md SOUL.md
+```
+
+### Reverting `SOUL.md`
+
+If you ever want to restore your old configuration, simply run:
+
+```bash
+cd ~/.openclaw/workspace
+mv SOUL.md.backup SOUL.md
 ```
 
 ### Verify Installation
