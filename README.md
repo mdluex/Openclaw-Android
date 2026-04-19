@@ -212,7 +212,8 @@ bash scripts/phone_control.sh fix-adb
 > su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
 > ```
 
-## Manual Testing
+<details>
+<summary><b>🛠️ Manual Testing (Click to expand)</b></summary>
 
 Run these commands from inside proot Ubuntu to test the scripts directly:
 
@@ -287,6 +288,7 @@ bash scripts/phone_agent.sh "Open Settings and enable Dark Mode"
 # Read what's on screen
 bash scripts/phone_agent.sh "Tell me what is currently on the screen"
 ```
+</details>
 
 ## Usage with OpenClaw
 
