@@ -114,6 +114,11 @@ rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Androi
 
 ### Step 6: Start OpenClaw
 
+> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
+> ```bash
+> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
+> ```
+
 Start your OpenClaw agent, and it will automatically load the `android-control` skill from the workspace.
 
 Since OpenClaw is installed as a background daemon, it handles everything automatically. You can check its status or start it manually using:
