@@ -80,14 +80,13 @@ openclaw onboard --install-daemon
 
 ```bash
 # Clone the Core OpenClaw repository
-git clone https://github.com/openclaw/openclaw.git ~/.openclaw-core
-cd ~/.openclaw-core
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
 
-# Install OpenClaw
-npm install -g pnpm
-pnpm install
-pnpm openclaw setup
-pnpm ui:build
+# Install and build OpenClaw
+pnpm install && pnpm build && pnpm ui:build
+pnpm link --global
+openclaw onboard --install-daemon
 ```
 
 ### Step 4: Setup Local ADB
@@ -117,18 +116,11 @@ rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Androi
 
 Start your OpenClaw agent, and it will automatically load the `android-control` skill from the workspace.
 
-**If you used Option A:** The OpenClaw daemon handles everything. You can check its status or start it manually:
+Since OpenClaw is installed as a background daemon, it handles everything automatically. You can check its status or start it manually using:
 
 ```bash
 openclaw status
 openclaw start
-```
-
-**If you used Option B:** Start it manually from your cloned repository:
-
-```bash
-# From inside ~/.openclaw-core
-pnpm gateway:watch
 ```
 
 Now you can chat with your agent (usually at `http://localhost:3000` or via the gateway) and ask it to open apps, search YouTube, or toggle system settings!
