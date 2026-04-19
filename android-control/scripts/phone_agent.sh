@@ -1,124 +1,65 @@
 #!/bin/bash
 # ============================================
-# 🤖 Autonomous Phone Agent (Pure Bash - v2)
-# Screenshot → Gemini Vision → Actions → Repeat
-# Streams data to avoid memory issues on phone
-# Works from inside proot Ubuntu by bridging commands to Termux/Android
+# 🤖 Autonomous Phone Agent (Optimized Fast Version)
 # ============================================
 
-# Termux paths accessible from inside proot
-TERMUX_PREFIX="/data/data/com.termux/files/usr"
-TERMUX_BIN="$TERMUX_PREFIX/bin"
+# --- CONFIG ---
+TERMUX_ADB="/data/data/com.termux/files/usr/bin/adb"
+ADB_HOST="127.0.0.1"
+ADB_PORT="5555"
 
-# Auto-detect the best method to run Android commands from proot
-detect_method() {
-  if [ -n "$RUN_METHOD" ]; then return; fi
-  if [ -x "$TERMUX_BIN/adb" ] && "$TERMUX_BIN/adb" get-state 1>/dev/null 2>&1; then
-    RUN_METHOD="adb"
-  elif [ -x /host-rootfs/sbin/su ]; then
-    RUN_METHOD="magisk"
-  elif [ -x /host-rootfs/system/xbin/su ]; then
-    RUN_METHOD="system_xbin"
-  elif [ -x /host-rootfs/system/bin/su ]; then
-    RUN_METHOD="system_bin"
-  else
-    echo "❌ Error: Cannot reach Android from proot."
-    echo "   Enable Wireless ADB or ensure root su is available."
-    exit 1
-  fi
-}
-
-# Run a command on Android from inside proot Ubuntu
-run_cmd() {
-  detect_method
-  case "$RUN_METHOD" in
-    adb)         "$TERMUX_BIN/adb" shell "$@" ;;
-    magisk)      /host-rootfs/sbin/su -c "$@" ;;
-    system_xbin) /host-rootfs/system/xbin/su -c "$@" ;;
-    system_bin)  /host-rootfs/system/bin/su -c "$@" ;;
-  esac
-}
-
-MODEL="gemini-2.5-flash-lite"
+MODEL="gemini-2.5-pro" # switch to a smarter model to avoid stupid loops
 MAX_STEPS=15
-SCREENSHOT_PATH="/sdcard/agent_screen.png"
-PAYLOAD_FILE="/sdcard/agent_payload.json"
-RESPONSE_FILE="/sdcard/agent_response.json"
 
-# Load API key
+REMOTE_SCREEN="/sdcard/agent_screen.png"
+REMOTE_XML="/sdcard/ui.xml"
+LOCAL_SCREEN="agent_screen.png"
+LOCAL_XML="ui_local.xml"
+PAYLOAD_FILE="agent_payload.json"
+RESPONSE_FILE="agent_response.json"
+
+# Optimized fast ADB command (skips connection checks to save time)
+run_cmd() {
+  "$TERMUX_ADB" -s $ADB_HOST:$ADB_PORT shell "$@"
+}
+
+pull_file() {
+    "$TERMUX_ADB" -s $ADB_HOST:$ADB_PORT pull "$1" "$2" >/dev/null 2>&1
+}
+
 load_api_key() {
+    if [ -n "$GEMINI_API_KEY" ]; then echo "$GEMINI_API_KEY"; return; fi
     local AUTH_FILE="$HOME/.openclaw/agents/main/agent/auth-profiles.json"
     if [ -f "$AUTH_FILE" ]; then
         grep -o '"key"[[:space:]]*:[[:space:]]*"[^"]*"' "$AUTH_FILE" | head -1 | sed 's/.*"key"[[:space:]]*:[[:space:]]*"//;s/"$//'
-    else
-        echo "$GEMINI_API_KEY"
     fi
 }
 
-# Execute an action on the phone
+# Ensure ADB is connected ONCE at the start, not every command
+check_adb() {
+    if ! "$TERMUX_ADB" -s $ADB_HOST:$ADB_PORT get-state >/dev/null 2>&1; then
+        echo "⚠️ Reconnecting ADB..."
+        "$TERMUX_ADB" connect $ADB_HOST:$ADB_PORT >/dev/null 2>&1
+    fi
+}
+
 do_action() {
     local ATYPE="$1"
     case "$ATYPE" in
-        tap)
-            run_cmd "input tap $2 $3" 2>/dev/null
-            echo "  👆 Tap ($2, $3)"
-            ;;
-        swipe)
-            run_cmd "input swipe $2 $3 $4 $5 ${6:-300}" 2>/dev/null
-            echo "  👆 Swipe ($2,$3)→($4,$5)"
-            ;;
-        type)
-            local TEXT="$2"
-            local ESCAPED=$(echo "$TEXT" | sed 's/ /%s/g')
-            run_cmd "input text '$ESCAPED'" 2>/dev/null
-            echo "  ⌨️ Type: $TEXT"
-            ;;
-        key)
-            run_cmd "input keyevent $2" 2>/dev/null
-            echo "  🔘 Key: $2"
-            ;;
-        open_app)
-            run_cmd "monkey -p $2 -c android.intent.category.LAUNCHER 1" 2>/dev/null
-            echo "  📱 Open: $2"
-            sleep 2
-            ;;
-        scroll_down)
-            run_cmd "input swipe 540 1600 540 600 300" 2>/dev/null
-            echo "  ⬇️ Scroll down"
-            ;;
-        scroll_up)
-            run_cmd "input swipe 540 600 540 1600 300" 2>/dev/null
-            echo "  ⬆️ Scroll up"
-            ;;
-        go_home)
-            run_cmd "input keyevent 3" 2>/dev/null
-            echo "  🏠 Home"
-            ;;
-        go_back)
-            run_cmd "input keyevent 4" 2>/dev/null
-            echo "  ◀️ Back"
-            ;;
-        wait)
-            echo "  ⏳ Wait ${2:-1}s"
-            sleep "${2:-1}"
-            ;;
-        done)
-            echo "  ✅ $2"
-            ;;
+        tap)      run_cmd "input tap $2 $3" ;; 
+        swipe)    run_cmd "input swipe $2 $3 $4 $5 ${6:-150}" ;; # Faster swipe by default
+        type)     run_cmd "input text '$(echo "$2" | sed 's/ /%s/g')'" ;;
+        key)      run_cmd "input keyevent $2" ;;
+        open_app) run_cmd "monkey -p $2 -c android.intent.category.LAUNCHER 1" ;;
+        wait)     sleep "${2:-0.5}" ;; # Shorter default wait
+        home)     run_cmd "input keyevent 3" ;;
+        back)     run_cmd "input keyevent 4" ;;
+        done)     echo "✅ Goal Achieved: $2"; exit 0 ;;
     esac
 }
 
-# ============================================
-# MAIN
-# ============================================
-
 if [ -z "$1" ]; then
-    echo "🤖 Phone Agent (Bash v2)"
     echo "Usage: bash phone_agent.sh \"<task>\""
-    echo ""
-    echo "Examples:"
-    echo '  bash phone_agent.sh "Open YouTube and search for lofi music"'
-    echo '  bash phone_agent.sh "Send WhatsApp to Mom saying Hello"'
     exit 0
 fi
 
@@ -126,220 +67,94 @@ TASK="$*"
 API_KEY=$(load_api_key)
 
 if [ -z "$API_KEY" ]; then
-    echo "❌ No API key found!"
+    echo "❌ No API key found."
     exit 1
 fi
 
-echo ""
-echo "🤖 PHONE AGENT v2"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📋 Task: $TASK"
-echo "🧠 Model: $MODEL"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-HISTORY=""
-URL="https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}"
-
-SYSTEM='You are an Android phone agent (1080x2240). You see a screenshot and a list of UI elements with exact coordinates. Use the UI element coordinates for precision.\n\nACTIONS (JSON only):\n{\"thought\": \"what I see and plan\", \"actions\": [{\"action\": \"tap\", \"x\": 540, \"y\": 500}]}\n\nAction types: tap(x,y), swipe(x1,y1,x2,y2), type(text), key(code: 3=HOME 4=BACK 66=ENTER), open_app(package), scroll_down, scroll_up, go_home, go_back, wait(seconds), done(message).\n\nPackages: com.whatsapp, com.google.android.youtube, com.instagram.android, com.android.chrome, com.android.settings\n\nIMPORTANT RULES:\n1. JSON only, 1-2 actions per step.\n2. PREFER using UI element coordinates over guessing.\n3. If a tap did not work, try DIFFERENT coordinates or a different approach.\n4. YouTube search icon is usually a magnifying glass at top-right around x=900-990, y=90-160.\n5. When you need to type, first make sure a text input field is focused (keyboard visible).\n6. Use open_app to launch apps, then wait 2-3s.\n7. Use done when the task is complete.'
+echo "🤖 FAST PHONE AGENT: $TASK"
+check_adb
 
 for STEP in $(seq 1 $MAX_STEPS); do
-    echo ""
-    echo "── STEP $STEP/$MAX_STEPS ──"
+    echo "\n── STEP $STEP/$MAX_STEPS ──"
 
-    # 1. Screenshot
-    echo "  📸 Capturing..."
-    run_cmd "screencap -p $SCREENSHOT_PATH" 2>/dev/null
-    sleep 0.5
+    # Optimization: Combine screenshot and dump into one shell call, then pull both.
+    # We pipe uiautomator dump to cat so we don't even need to pull the XML file!
+    run_cmd "screencap -p $REMOTE_SCREEN" >/dev/null 2>&1 &
+    SCREENCAP_PID=$!
+    
+    # Get XML directly via stdout, bypassing the pull command for XML
+    UI_XML=$(run_cmd "uiautomator dump /dev/tty >/dev/null 2>&1 && cat /sdcard/window_dump.xml 2>/dev/null")
+    
+    wait $SCREENCAP_PID
+    pull_file "$REMOTE_SCREEN" "$LOCAL_SCREEN"
 
-    if [ ! -s "$SCREENSHOT_PATH" ]; then
-        echo "  ❌ Screenshot failed"
-        sleep 1
-        continue
-    fi
+    # Prepare payload directly in python, reading UI_XML from environment variable
+    export UI_XML
+    python3 -c "
+import json, sys, base64, os
 
-    # 2. Get UI elements for precise coordinates
-    echo "  🔍 Reading UI..."
-    run_cmd "uiautomator dump /sdcard/ui.xml" 2>/dev/null
-    sleep 0.3
-    UI_ELEMENTS=$(run_cmd "cat /sdcard/ui.xml" 2>/dev/null | grep -o 'text="[^"]*"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -20 | while read -r line; do
-        txt=$(echo "$line" | sed -n 's/.*text="\([^"]*\)".*/\1/p')
-        bnds=$(echo "$line" | sed -n 's/.*bounds="\([^"]*\)".*/\1/p')
-        x1=$(echo "$bnds" | sed 's/\[//g;s/\]/ /g' | awk '{print $1}' | cut -d, -f1)
-        y1=$(echo "$bnds" | sed 's/\[//g;s/\]/ /g' | awk '{print $1}' | cut -d, -f2)
-        x2=$(echo "$bnds" | sed 's/\[//g;s/\]/ /g' | awk '{print $2}' | cut -d, -f1)
-        y2=$(echo "$bnds" | sed 's/\[//g;s/\]/ /g' | awk '{print $2}' | cut -d, -f2)
-        if [ -n "$x1" ] && [ -n "$y1" ] && [ -n "$x2" ] && [ -n "$y2" ]; then
-            cx=$(( (x1 + x2) / 2 ))
-            cy=$(( (y1 + y2) / 2 ))
-            [ -n "$txt" ] && echo "$txt center($cx,$cy)"
-        fi
-    done 2>/dev/null)
-    UI_COUNT=$(echo "$UI_ELEMENTS" | grep -c "center" 2>/dev/null)
-    echo "  📋 $UI_COUNT elements"
+task = '''$TASK'''
 
-    # 3. Build payload as a FILE (not in memory)
-    ESCAPED_TASK=$(echo "$TASK" | sed 's/"/\\"/g')
-    ESCAPED_UI=$(echo "$UI_ELEMENTS" | tr '\n' ' ' | sed 's/"/\\"/g')
-    USER_MSG="TASK: ${ESCAPED_TASK}. Step ${STEP}/${MAX_STEPS}. ${HISTORY}UI Elements: ${ESCAPED_UI}. Analyze screenshot and UI elements, respond JSON only."
-    
-    cat > "$PAYLOAD_FILE.head" << 'HEREDOC_END'
-{"systemInstruction":{"parts":[{"text":"
-HEREDOC_END
-    # Remove newline from head
-    tr -d '\n' < "$PAYLOAD_FILE.head" > "$PAYLOAD_FILE.tmp"
-    
-    # Write system prompt
-    echo -n "$SYSTEM" >> "$PAYLOAD_FILE.tmp"
-    
-    cat >> "$PAYLOAD_FILE.tmp" << 'HEREDOC_END'
-"}]},"contents":[{"parts":[{"inline_data":{"mimeType":"image/png","data":"
-HEREDOC_END
-    # Remove the trailing newline from heredoc
-    # Now we need to build the file properly without newlines in wrong places
+try:
+    if os.path.exists('$LOCAL_SCREEN'):
+        with open('$LOCAL_SCREEN', 'rb') as f:
+            img_b64 = base64.b64encode(f.read()).decode('utf-8')
+    else: img_b64 = None
+except: img_b64 = None
 
-    # Let's do it more carefully with printf
-    rm -f "$PAYLOAD_FILE" 2>/dev/null
-    
-    printf '{"systemInstruction":{"parts":[{"text":"%s"}]},"contents":[{"parts":[{"inline_data":{"mimeType":"image/png","data":"' "$SYSTEM" > "$PAYLOAD_FILE"
-    
-    # Stream base64 directly into the file (no variable!)
-    base64 "$SCREENSHOT_PATH" | tr -d '\n' >> "$PAYLOAD_FILE"
-    
-    printf '"}},{"text":"%s"}]}],"generationConfig":{"temperature":0.2,"maxOutputTokens":512,"responseMimeType":"application/json"}}' "$USER_MSG" >> "$PAYLOAD_FILE"
+ui_xml = os.environ.get('UI_XML', 'Unavailable')[:15000]
 
-    PAYLOAD_SIZE=$(wc -c < "$PAYLOAD_FILE")
-    echo "  📦 Payload: ${PAYLOAD_SIZE} bytes"
+system_prompt = '''You are a fast, efficient Android Agent. 
+Analyze the screenshot and UI XML. 
+Goal: ''' + task + '''
+CRITICAL RULES:
+1. Return JSON ONLY: {\"thought\": \"short reasoning\", \"action\": \"command\", \"args\": [arg1]}
+2. DO NOT over-explain in thoughts.
+3. Be precise with coordinates.
+4. DO NOT repeat the same failed action. If tapping something does not work, try a slightly different coordinate or approach.
+Valid actions: tap(x,y), swipe(x1,y1,x2,y2), type(text), key(code), open_app(package), home, back, wait(sec), done(message)'''
 
-    # 3. Call Gemini API
-    echo "  🧠 Asking Gemini..."
-    
-    HTTP_CODE=$(curl -s -w "%{http_code}" -o "$RESPONSE_FILE" \
-        -X POST "$URL" \
+contents = [{'parts': [{'text': system_prompt}, {'text': 'UI Context: ' + ui_xml}]}]
+if img_b64: contents[0]['parts'].append({'inline_data': {'mimeType': 'image/png', 'data': img_b64}})
+
+print(json.dumps({
+    'contents': contents,
+    'generationConfig': {'responseMimeType': 'application/json', 'temperature': 0.1}
+}))
+" > "$PAYLOAD_FILE"
+
+    # Fast API Call
+    curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$API_KEY" \
         -H "Content-Type: application/json" \
-        -d "@${PAYLOAD_FILE}" \
-        --connect-timeout 15 \
-        --max-time 45 2>/dev/null)
-
-    if [ "$HTTP_CODE" != "200" ]; then
-        echo "  ❌ API error: HTTP $HTTP_CODE"
-        if [ -f "$RESPONSE_FILE" ]; then 
-            ERROR_MSG=$(grep -oP '"message"\s*:\s*"\K[^"]*' "$RESPONSE_FILE" | head -1)
-            echo "  ❌ $ERROR_MSG"
-        fi
-        if [ "$HTTP_CODE" = "429" ]; then
-            echo "  ⏳ Rate limited, waiting 10s..."
-            sleep 10
-        fi
-        continue
-    fi
-
-    # 4. Parse response
-    # The Gemini response has escaped JSON inside "text": "{\"thought\":...}"
-    # We need to extract everything between "text": " and the closing "
-    # Using sed to handle escaped quotes inside the value
+        -d @"$PAYLOAD_FILE" > "$RESPONSE_FILE"
+        
+    # Execute Action
+    python3 -c "
+import json, sys
+try:
+    with open('$RESPONSE_FILE') as f: data = json.load(f)
+    if 'error' in data:
+        print(f\"❌ API Error: {data['error'].get('message')}\")
+        exit(1)
+        
+    text = data['candidates'][0]['content']['parts'][0]['text']
+    cmd = json.loads(text)
+    print(f\"💭 {cmd.get('thought', '')}\")
+    print(f\"⚡ ACTION: {cmd.get('action')} {cmd.get('args')}\")
     
-    # Method: extract the text field value, handling \" inside
-    RESPONSE_TEXT=$(sed -n 's/.*"text"[[:space:]]*:[[:space:]]*"\(.*\)"/\1/p' "$RESPONSE_FILE" | head -1)
+    with open('next_action.sh', 'w') as f:
+        args = ' '.join([str(a) for a in cmd.get('args', [])])
+        f.write(f\"do_action {cmd.get('action')} {args}\")
+except Exception as e:
+    print(f\"Error parsing: {e}\")
+" > output.log
+
+    cat output.log
+    if [ -f next_action.sh ]; then
+        source next_action.sh 2>/dev/null
+        rm next_action.sh
+    fi
     
-    if [ -z "$RESPONSE_TEXT" ]; then
-        echo "  ⚠️ Empty response, retrying..."
-        cat "$RESPONSE_FILE" | head -5 >&2
-        continue
-    fi
-
-    # Unescape: \" -> " and \\n -> newline
-    CLEAN=$(echo "$RESPONSE_TEXT" | sed 's/\\"/"/g; s/\\n/ /g; s/\\t/ /g')
-
-    # Extract thought
-    THOUGHT=$(echo "$CLEAN" | sed -n 's/.*"thought"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-    [ -z "$THOUGHT" ] && THOUGHT="thinking..."
-    echo "  💭 $THOUGHT"
-
-    # 5. Execute actions
-    ACTED=false
-
-    # Check for done first
-    if echo "$CLEAN" | grep -q '"done"'; then
-        DONE_MSG=$(echo "$CLEAN" | sed -n 's/.*"message"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-        echo ""
-        echo "  ✅ DONE: $DONE_MSG"
-        break
-    fi
-
-    # Parse open_app (check first — it includes opening the app)
-    APP_PKG=$(echo "$CLEAN" | sed -n 's/.*"open_app".*"package"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-    if [ -n "$APP_PKG" ]; then
-        do_action "open_app" "$APP_PKG"
-        ACTED=true
-    fi
-
-    # Parse tap
-    if echo "$CLEAN" | grep -q '"tap"'; then
-        X=$(echo "$CLEAN" | sed -n 's/.*"tap".*"x"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
-        Y=$(echo "$CLEAN" | sed -n 's/.*"tap".*"y"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
-        if [ -n "$X" ] && [ -n "$Y" ]; then
-            do_action "tap" "$X" "$Y"
-            ACTED=true
-        fi
-    fi
-
-    # Parse type
-    if echo "$CLEAN" | grep -q '"type"'; then
-        TYPE_TEXT=$(echo "$CLEAN" | sed -n 's/.*"type".*"text"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-        if [ -n "$TYPE_TEXT" ]; then
-            do_action "type" "$TYPE_TEXT"
-            ACTED=true
-        fi
-    fi
-
-    # Parse key
-    if echo "$CLEAN" | grep -q '"key"'; then
-        KEY_CODE=$(echo "$CLEAN" | sed -n 's/.*"key".*"code"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
-        if [ -n "$KEY_CODE" ]; then
-            do_action "key" "$KEY_CODE"
-            ACTED=true
-        fi
-    fi
-
-    # Parse simple actions
-    echo "$CLEAN" | grep -q '"scroll_down"' && do_action "scroll_down" && ACTED=true
-    echo "$CLEAN" | grep -q '"scroll_up"' && do_action "scroll_up" && ACTED=true
-    echo "$CLEAN" | grep -q '"go_back"' && do_action "go_back" && ACTED=true
-    echo "$CLEAN" | grep -q '"go_home"' && do_action "go_home" && ACTED=true
-
-    # Parse wait
-    if echo "$CLEAN" | grep -q '"wait"'; then
-        WAIT_SECS=$(echo "$CLEAN" | sed -n 's/.*"wait".*"seconds"[[:space:]]*:[[:space:]]*\([0-9.]*\).*/\1/p')
-        [ -n "$WAIT_SECS" ] && do_action "wait" "$WAIT_SECS" && ACTED=true
-    fi
-
-    # Parse swipe
-    if echo "$CLEAN" | grep -q '"swipe"'; then
-        SX1=$(echo "$CLEAN" | sed -n 's/.*"swipe".*"x1"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
-        SY1=$(echo "$CLEAN" | sed -n 's/.*"swipe".*"y1"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
-        SX2=$(echo "$CLEAN" | sed -n 's/.*"swipe".*"x2"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
-        SY2=$(echo "$CLEAN" | sed -n 's/.*"swipe".*"y2"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
-        if [ -n "$SX1" ]; then
-            do_action "swipe" "$SX1" "$SY1" "$SX2" "$SY2"
-            ACTED=true
-        fi
-    fi
-
-    if [ "$ACTED" = "false" ]; then
-        echo "  ⚠️ No actions parsed from: $CLEAN"
-    fi
-
-    # Update history
-    HISTORY="Previous: ${THOUGHT}. "
-
-    # Wait for screen to update
-    sleep 1
+    # Optimized wait: Only wait a tiny bit to let UI settle before next loop
+    sleep 0.5
 done
-
-# Cleanup
-rm -f "$PAYLOAD_FILE" "$PAYLOAD_FILE.head" "$PAYLOAD_FILE.tmp" "$RESPONSE_FILE" 2>/dev/null
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🏁 Agent finished ($STEP steps)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
