@@ -33,7 +33,95 @@ android-control/
 - Defines the agent's personality, behavior rules, and operational boundaries
 - Installed to the workspace root so the agent loads it on every session
 
-## Installation
+## 🚀 Full System Setup (From Scratch)
+
+If you are starting from a completely fresh phone, follow this step-by-step guide to get Termux, proot Ubuntu, OpenClaw, and the Android Control skill running.
+
+### Step 1: Install Termux & Proot Ubuntu
+
+1. Download and install **Termux** from [F-Droid](https://f-droid.org/packages/com.termux/) (Do not use the Google Play version).
+2. Open Termux and run the following commands to update and install `proot-distro`:
+
+```bash
+pkg update -y && pkg upgrade -y
+pkg install proot-distro -y
+```
+
+3. Install and log into Ubuntu:
+
+```bash
+proot-distro install ubuntu
+proot-distro login ubuntu
+```
+
+### Step 2: Install Node.js & Python inside Ubuntu
+
+Once inside the `root@localhost:~#` Ubuntu prompt, install the required dependencies:
+
+```bash
+apt update && apt upgrade -y
+apt install curl git build-essential python3 python3-pip -y
+
+# Install Node.js
+curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+apt install -y nodejs
+```
+
+### Step 3: Install OpenClaw
+
+Clone and set up [OpenClaw](https://github.com/openclaw/openclaw) from its official repository:
+
+```bash
+# Clone the Core OpenClaw repository
+git clone https://github.com/openclaw/openclaw.git ~/.openclaw-core
+cd ~/.openclaw-core
+
+# Install OpenClaw
+npm install -g pnpm
+pnpm install
+pnpm openclaw setup
+pnpm ui:build
+```
+
+### Step 4: Setup Local ADB
+
+To allow the AI to control your phone, you must enable Local ADB.
+
+1. On your phone, go to **Settings > About Phone** and tap **Build Number** 7 times to enable Developer Options.
+2. Go to **Settings > Developer Options** and enable **USB Debugging** and **Wireless Debugging**.
+3. Open a *new* Termux session (swipe from left margin > New Session, outside of Ubuntu) and run:
+
+```bash
+pkg install android-tools -y
+# Start ADB on port 5555
+su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
+adb connect 127.0.0.1:5555
+```
+
+### Step 5: Install the Android Control Skill
+
+Return to your `proot-distro login ubuntu` session and run the one-liner to install this skill:
+
+```bash
+rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Android.git ~/Openclaw-Android && cd ~/.openclaw/workspace && mkdir -p skills && cp -rf ~/Openclaw-Android/android-control skills/android-control && cp ~/.openclaw/workspace/SOUL.md ~/.openclaw/workspace/SOUL.md.backup 2>/dev/null || true && cp -f ~/Openclaw-Android/android-control/SOUL.md ~/.openclaw/workspace/SOUL.md
+```
+
+### Step 6: Start OpenClaw
+
+Start your OpenClaw agent, and it will automatically load the `android-control` skill from the workspace:
+
+```bash
+# From inside ~/.openclaw-core
+pnpm gateway:watch
+```
+
+Now you can chat with your agent (usually at `http://localhost:3000` or via the gateway) and ask it to open apps, search YouTube, or toggle system settings!
+
+---
+
+## ⚡ Skill Installation Only
+
+If you already have OpenClaw running and just want to install the skill:
 
 ### Prerequisites
 
