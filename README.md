@@ -146,6 +146,11 @@ If you already have OpenClaw running and just want to install the skill:
 ### Manual Installation
 
 > **⚠️ Note:** Installing this skill will overwrite your existing `SOUL.md` file. The commands below automatically create a backup (`SOUL.md.backup`).
+>
+> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
+> ```bash
+> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
+> ```
 
 ```bash
 # Clone the repo (remove old clone if exists)
