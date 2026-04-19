@@ -69,7 +69,14 @@ apt install -y nodejs
 
 ### Step 3: Install OpenClaw
 
-Clone and set up [OpenClaw](https://github.com/openclaw/openclaw) from its official repository:
+**Option A (Recommended):** Install the pre-built OpenClaw package via NPM and set up the background daemon:
+
+```bash
+npm install -g openclaw@latest
+openclaw onboard --install-daemon
+```
+
+**Option B (Fallback):** If the NPM installation fails, you can compile it from source instead:
 
 ```bash
 # Clone the Core OpenClaw repository
@@ -108,7 +115,16 @@ rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Androi
 
 ### Step 6: Start OpenClaw
 
-Start your OpenClaw agent, and it will automatically load the `android-control` skill from the workspace:
+Start your OpenClaw agent, and it will automatically load the `android-control` skill from the workspace.
+
+**If you used Option A:** The OpenClaw daemon handles everything. You can check its status or start it manually:
+
+```bash
+openclaw status
+openclaw start
+```
+
+**If you used Option B:** Start it manually from your cloned repository:
 
 ```bash
 # From inside ~/.openclaw-core
