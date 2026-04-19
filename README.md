@@ -201,16 +201,16 @@ The skill requires a Local ADB connection on port 5555. To set it up:
 # In Termux (not proot), enable ADB over TCP
 su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
 
-> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
-> ```bash
-> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
-> ```
-
 If ADB drops, you can fix it from inside proot using:
 
 ```bash
 bash scripts/phone_control.sh fix-adb
 ```
+
+> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
+> ```bash
+> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
+> ```
 
 ## Manual Testing
 
