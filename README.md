@@ -101,8 +101,12 @@ To allow the AI to control your phone, you must enable Local ADB.
 pkg install android-tools -y
 # Start ADB on port 5555
 su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
-adb connect 127.0.0.1:5555
 ```
+
+> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
+> ```bash
+> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
+> ```
 
 ### Step 5: Install the Android Control Skill
 
@@ -113,11 +117,6 @@ rm -rf ~/Openclaw-Android && git clone https://github.com/mdluex/Openclaw-Androi
 ```
 
 ### Step 6: Start OpenClaw
-
-> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
-> ```bash
-> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
-> ```
 
 Start your OpenClaw agent, and it will automatically load the `android-control` skill from the workspace.
 
@@ -146,11 +145,6 @@ If you already have OpenClaw running and just want to install the skill:
 ### Manual Installation
 
 > **⚠️ Note:** Installing this skill will overwrite your existing `SOUL.md` file. The commands below automatically create a backup (`SOUL.md.backup`).
->
-> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
-> ```bash
-> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
-> ```
 
 ```bash
 # Clone the repo (remove old clone if exists)
@@ -207,9 +201,10 @@ The skill requires a Local ADB connection on port 5555. To set it up:
 # In Termux (not proot), enable ADB over TCP
 su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
 
-# Connect ADB to localhost
-adb connect 127.0.0.1:5555
-```
+> **⚠️ IMPORTANT:** Each time you want to run OpenClaw (or when you reboot your phone), you **must** execute this command in a normal Termux session *before* logging into `proot ubuntu` to ensure the ADB bridge is active:
+> ```bash
+> su -c "setprop service.adb.tcp.port 5555 && stop adbd && start adbd"
+> ```
 
 If ADB drops, you can fix it from inside proot using:
 
